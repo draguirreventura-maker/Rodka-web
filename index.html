@@ -28,6 +28,10 @@
 <script type="text/babel" data-presets="react">
 const { useState } = React;
 
+// Enlace de la Aplicación web de Google Apps Script (Implementar → Aplicación web)
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLQ6kwh2s8MltX9f-JDbfE_CHbzA5-YjGYr-hfs5v0UUQVb51PBZ_NWGJZYHBX0cXu/exec';
+const MAX_MB = 10;
+
 const SERVICES = [
   { id: 'metodologia', label: 'Diseño metodológico', desc: 'PICOT/PECO, tipo de estudio, variables', price: 45 },
   { id: 'estadistica', label: 'Análisis estadístico', desc: 'SPSS, Stata o R — corrección o ejecución', price: 60 },
@@ -41,6 +45,9 @@ function RodkaIntake() {
   const [step, setStep] = useState(0);
   const [entryPath, setEntryPath] = useState(null);
   const [fileName, setFileName] = useState('');
+  const [file, setFile] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
   const [docType, setDocType] = useState('');
   const [service, setService] = useState(null);
   const [notes, setNotes] = useState('');
@@ -54,7 +61,7 @@ function RodkaIntake() {
 
   const canAdvance = [
     entryPath !== null,
-    docType.trim().length > 0,
+    file !== null && docType.trim().length > 0,
     isDiagnostico ? true : service !== null,
     name.trim().length > 0 && email.trim().length > 0,
     true,
@@ -62,19 +69,57 @@ function RodkaIntake() {
 
   const handleFile = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFileName(e.target.files[0].name);
+      const f = e.target.files[0];
+      if (f.size > MAX_MB * 1024 * 1024) {
+        alert('El archivo pesa más de ' + MAX_MB + ' MB. Por favor comprímelo o envíalo en PDF.');
+        return;
+      }
+      setFile(f);
+      setFileName(f.name);
     }
   };
 
-  // NOTA PARA VERÓNICA: aquí es donde luego conectamos el envío real
-  // (a Google Sheets, correo, o el generador de link de pago).
-  // Por ahora solo muestra la pantalla de confirmación.
-  const submit = () => setSubmitted(true);
+  const leerBase64 = (f) => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    r.readAsDataURL(f);
+  });
+
+  const submit = async () => {
+    setSending(true);
+    setSendError('');
+    try {
+      const datos = {
+        entrada: isDiagnostico ? 'Diagnóstico' : 'Servicio completo',
+        servicio: isDiagnostico ? 'Diagnóstico' : (selectedService ? selectedService.label : ''),
+        tarifa: isDiagnostico ? 5 : (selectedService ? selectedService.price : ''),
+        tipoDocumento: docType,
+        notas: notes,
+        nombre: name,
+        correo: email,
+        whatsapp: phone,
+        archivoNombre: file ? file.name : '',
+        archivoTipo: file ? file.type : '',
+        archivoBase64: file ? await leerBase64(file) : '',
+      };
+      const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(datos) });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Error al enviar');
+      setSubmitted(true);
+    } catch (err) {
+      setSendError('No pudimos enviar tu solicitud. Revisa tu conexión e inténtalo de nuevo.');
+    } finally {
+      setSending(false);
+    }
+  };
 
   const resetAll = () => {
     setStep(0);
     setEntryPath(null);
     setFileName('');
+    setFile(null);
+    setSendError('');
     setDocType('');
     setService(null);
     setNotes('');
@@ -251,6 +296,7 @@ function RodkaIntake() {
                     ? 'Al pagar los $5, recibirás tu informe de diagnóstico en 24-48h junto con un link para continuar con el servicio completo si lo decides — con el descuento ya aplicado.'
                     : 'Al enviar, recibirás en tu correo el link de pago y el plazo de entrega estimado.'}
                 </p>
+                {sendError && <p style={{ ...styles.sub, color: '#B3261E', marginTop: 8 }}>{sendError}</p>}
               </div>
             )}
           </div>
@@ -269,8 +315,8 @@ function RodkaIntake() {
                 Continuar
               </button>
             ) : (
-              <button onClick={submit} style={styles.primaryBtn}>
-                {isDiagnostico ? 'Pagar $5 y enviar' : 'Enviar solicitud'}
+              <button onClick={submit} disabled={sending} style={{ ...styles.primaryBtn, opacity: sending ? 0.6 : 1 }}>
+                {sending ? 'Enviando…' : (isDiagnostico ? 'Pagar $5 y enviar' : 'Enviar solicitud')}
               </button>
             )}
           </div>
