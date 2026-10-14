@@ -268,12 +268,12 @@ function RodkaIntake() {
             {step === 3 && (
               <div>
                 <h2 style={styles.h2}>¿Dónde te contactamos?</h2>
-                <p style={styles.sub}>Recibirás {isDiagnostico ? 'tu diagnóstico' : 'la cotización y el trabajo terminado'} por aquí.</p>
+                <p style={styles.sub}>Te escribiremos por aquí para confirmar tu solicitud y coordinar el pago.</p>
                 <label style={styles.label}>Nombre completo</label>
                 <input value={name} onChange={e => setName(e.target.value)} style={styles.input} placeholder="Tu nombre" />
                 <label style={styles.label}>Correo electrónico</label>
                 <input value={email} onChange={e => setEmail(e.target.value)} style={styles.input} placeholder="tu@correo.com" type="email" />
-                <label style={styles.label}>WhatsApp (opcional)</label>
+                <label style={styles.label}>WhatsApp (opcional, si prefieres que te contactemos por ahí)</label>
                 <input value={phone} onChange={e => setPhone(e.target.value)} style={styles.input} placeholder="+503 ...." />
               </div>
             )}
@@ -291,11 +291,9 @@ function RodkaIntake() {
                   <div style={styles.summaryRow}><span>Tarifa</span><strong style={{ color: isDiagnostico ? '#4EC9C0' : '#C9A227' }}>${isDiagnostico ? '5' : (selectedService ? selectedService.price : '—')}</strong></div>
                   <div style={styles.summaryRow}><span>Contacto</span><strong>{name || '—'}</strong></div>
                 </div>
-                <p style={{ ...styles.sub, marginTop: 16 }}>
-                  {isDiagnostico
-                    ? 'Al pagar los $5, recibirás tu informe de diagnóstico en 24-48h junto con un link para continuar con el servicio completo si lo decides — con el descuento ya aplicado.'
-                    : 'Al enviar, recibirás en tu correo el link de pago y el plazo de entrega estimado.'}
-                </p>
+                <div style={styles.notice}>
+                  <strong>Aún no tienes que pagar nada.</strong> Revisaremos tu documento y te escribiremos en menos de 24 horas hábiles para confirmar que podemos tomar tu trabajo, con el monto final y los datos para transferir. Iniciamos en cuanto recibamos tu comprobante.
+                </div>
                 {sendError && <p style={{ ...styles.sub, color: '#B3261E', marginTop: 8 }}>{sendError}</p>}
               </div>
             )}
@@ -316,7 +314,7 @@ function RodkaIntake() {
               </button>
             ) : (
               <button onClick={submit} disabled={sending} style={{ ...styles.primaryBtn, opacity: sending ? 0.6 : 1 }}>
-                {sending ? 'Enviando…' : (isDiagnostico ? 'Pagar $5 y enviar' : 'Enviar solicitud')}
+                {sending ? 'Enviando…' : 'Enviar solicitud'}
               </button>
             )}
           </div>
@@ -327,9 +325,11 @@ function RodkaIntake() {
             <div style={styles.confirmMark}>✓</div>
             <h2 style={{ ...styles.h2, textAlign: 'center' }}>Solicitud recibida</h2>
             <p style={{ ...styles.sub, textAlign: 'center' }}>
-              {isDiagnostico
-                ? <>Te escribiremos a <strong>{email}</strong> con tu diagnóstico en 24-48 horas, junto con el link para continuar si decides contratar el servicio completo.</>
-                : <>Te escribiremos a <strong>{email}</strong> con la cotización y el link de pago en menos de 24 horas.</>}
+              Gracias, {name.split(' ')[0]}. Recibimos tu documento.<br />
+              Te escribiremos a <strong>{email}</strong> en menos de 24 horas hábiles con la confirmación y los datos de pago.
+            </p>
+            <p style={{ ...styles.sub, textAlign: 'center', fontSize: 12 }}>
+              También te enviamos un resumen a tu correo. Si no lo ves, revisa tu carpeta de spam.
             </p>
           </div>
           <div style={styles.footer}>
@@ -375,6 +375,9 @@ const styles = {
   ghostBtn: { background: 'none', border: 'none', color: '#6B6A5F', fontSize: 14, cursor: 'pointer', padding: '8px 4px' },
   primaryBtn: { background: '#0C2340', color: '#F8F6F1', border: 'none', borderRadius: 3, padding: '11px 22px', fontSize: 14, fontWeight: 600, cursor: 'pointer' },
   confirmMark: { width: 48, height: 48, borderRadius: '50%', background: '#4EC9C0', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, margin: '0 auto 16px' },
+  who: { fontSize: 12, color: '#6B6A5F', marginTop: 14, lineHeight: 1.6 },
+  whoMono: { fontFamily: "'Space Mono', monospace", fontSize: 11, color: '#8A8676' },
+  notice: { marginTop: 16, padding: '12px 14px', background: '#EFFAF9', borderLeft: '3px solid #4EC9C0', borderRadius: 3, fontSize: 13, color: '#0C2340', lineHeight: 1.5 },
   trust: { fontFamily: "'Space Mono', monospace", fontSize: 11, color: '#8A8676', marginTop: 24, letterSpacing: 0.5 },
 };
 
